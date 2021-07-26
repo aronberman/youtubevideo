@@ -1,0 +1,59 @@
+
+#Install EPEL Release
+
+yum install epel-release wget -y
+yum install -y yum-utils
+
+
+#Install Docker Repo & Docker
+
+yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+yum install -y docker-ce
+
+
+#Install Docker Compose
+
+curl -s https://api.github.com/repos/docker/compose/releases/latest \
+  | grep browser_download_url \
+  | grep docker-compose-Linux-x86_64 \
+  | cut -d '"' -f 4 \
+  | wget -qi -
+chmod +x docker-compose-Linux-x86_64
+sudo mv docker-compose-Linux-x86_64 /usr/local/bin/docker-compose
+
+
+#Make Certificate
+
+mkdir /certs
+cd /certs
+openssl req -sha256 -x509 -days 365 -nodes -newkey rsa:4096 -keyout  harbor.server.local.key -out harbor.server.local.crt
+
+#Download & Extract Harbor 
+
+wget https://github.com/goharbor/harbor/releases/download/v2.2.3/harbor-offline-installer-v2.2.3.tgz
+tar -xvzf harbor-offline-installer-v2.2.3.tgz
+cd harbor
+cp harbor.yml.tmpl harbor.yml
+
+#Install Harbor
+./install.sh --with-notary --with-chartmuseum
+
+
+#Client Certificate 
+
+mkdir -p /etc/docker/certs.d/harbor.server.local
+cd /etc/docker/certs.d/harbor.server.local
+cp /certs/harbor.server.local.crt .
+
+#Login Harbor
+
+
+#Push & Pull Registry
+
+docker pull ubuntu:20.04
+docker tag ubuntu:20.04 harbor.server.local/demo/ubuntu:20.04
+
+
+#Stop 
+docker-compose ps
+docker-compose stop
