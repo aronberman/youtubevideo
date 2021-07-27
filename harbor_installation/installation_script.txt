@@ -47,6 +47,7 @@ cp /certs/harbor.server.local.crt .
 
 #Login Harbor
 
+docker login harbor.server.local
 
 #Push & Pull Registry
 
